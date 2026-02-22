@@ -41,7 +41,8 @@ class Blackjack:
             elif response.content.lower() == 'stay':
                 #TODO: Don't hardcode the dealer score
                 dealerScore = random.randint(16,21)
-                await self.channel.send(f"berda bot score:{dealerScore}")
+                await self.channel.send(f"Dealer score:{dealerScore}")
+                await self.channel.send(f"{self.player.mention} score: {self.playerScore}")
                 if self.playerScore < dealerScore:
                     await self.channel.send(f"{self.player.mention} berda_bot wins! You lose, hombre")
                 elif self.playerScore == self.dealerScore:
@@ -79,5 +80,6 @@ class Blackjack:
             return 'Ace'
         if card == 10:
             return self.royals[random.randint(0,2)]
+        return card
 
 
