@@ -49,12 +49,23 @@ class Blackjack:
                 dealerBust = False
 
                 while self.dealerScore < 17:
-                    self.hit('Dealer')
+                    dealerCard = self.hit('Dealer')
+                    await self.channel.send(f"Dealer draws {dealerCard}")
+
                 if self.dealerScore > 21:
                     dealerBust = True
 
-                await self.channel.send(f"Dealer score:{self.dealerScore}")
-                await self.channel.send(f"{self.player.mention} score: {self.playerScore}")
+                dealer_cards = ", ".join(str(card) for card in self.dealerHand)
+                player_cards = ", ".join(str(card) for card in self.playerHand)
+
+                message = f"""
+                **Dealer's Hand:** {dealer_cards}
+                **Score:** {self.dealerScore}
+
+                **{self.player.display_name}'s Hand:** {player_cards}
+                **Score:** {self.playerScore}
+                """
+                await self.channel.send(message)
                 
                 if not dealerBust:
                     if self.playerScore < self.dealerScore:
@@ -86,6 +97,7 @@ class Blackjack:
                 self.playerScore += 10 #11 for an ace
         if card2 == 10:
             card2 = self.royals[random.randint(0,2)]
+        self.playerHand.append(card2)
 
         hand = [card1,card2]
         return hand
@@ -93,9 +105,17 @@ class Blackjack:
     def hit(self, caller):
         hand = None
         card = random.randint(1,10)
+
         if caller == 'Player':
             hand = self.playerHand
             self.playerScore += card
+
+            if card == 1:
+                card =  'Ace'
+            if card == 10:
+                card =  self.royals[random.randint(0,2)]
+            self.playerHand.append(card)
+
             if self.playerScore > 21:
                 #check for Aces to change so as to not Bust
                 for i in hand:
@@ -103,9 +123,16 @@ class Blackjack:
                         self.playerScore -= 10 #make the found Ace into a 1
                         break
 
-        if caller == 'Dealer':
+        elif caller == 'Dealer':
             hand = self.dealerHand
             self.dealerScore += card
+
+            if card == 1:
+                card =  'Ace'
+            if card == 10:
+                card =  self.royals[random.randint(0,2)]
+            self.dealerHand.append(card)
+
             if self.dealerScore > 21:
                 #check for Aces to change so as to not Bust
                 for i in hand:
@@ -113,8 +140,4 @@ class Blackjack:
                         self.dealerScore -= 10 #make the found Ace into a 1
                         break
 
-        if card == 1:
-            return 'Ace'
-        if card == 10:
-            return self.royals[random.randint(0,2)]
         return card
