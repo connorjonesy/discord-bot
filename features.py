@@ -1,6 +1,9 @@
 import random
 from asyncio import TimeoutError
 
+#TODO
+#TASK:: Double down and Splits
+
 
 class Blackjack:
     def __init__(self, channel, player, bot):
@@ -10,10 +13,14 @@ class Blackjack:
         self.royals = ['Jack', 'Queen', 'King']
         self.playerScore = 0
         self.dealerScore = 0
+        self.dealerHand = []
+        self.playerHand = []
 
     async def playgame(self):
         # Deal initial cards
         hand = self.generateHand()
+        dealerFirstCard = self.hit('Dealer')
+        await self.channel.send(f"Dealer reveals his first card: {dealerFirstCard}")
         await self.channel.send(f"{self.player.mention} gets a {hand[0]} and a {hand[1]}. Hit or stay?")
 
         gameover = False
@@ -29,7 +36,7 @@ class Blackjack:
                 return
 
             if response.content.lower() in ['hit','hit me']:
-                newCard = self.hit()
+                newCard = self.hit('Player')
                 await self.channel.send(f"You got a {newCard}!")
                 await self.channel.send(f"{self.player.mention}'s Score: {self.playerScore}")
                 if self.playerScore > 21:
@@ -39,47 +46,75 @@ class Blackjack:
                     await self.channel.send(f"Hit or stay?")
 
             elif response.content.lower() == 'stay':
-                #TODO: Don't hardcode the dealer score
-                dealerScore = random.randint(16,21)
-                await self.channel.send(f"Dealer score:{dealerScore}")
+                dealerBust = False
+
+                while self.dealerScore < 17:
+                    self.hit('Dealer')
+                if self.dealerScore > 21:
+                    dealerBust = True
+
+                await self.channel.send(f"Dealer score:{self.dealerScore}")
                 await self.channel.send(f"{self.player.mention} score: {self.playerScore}")
-                if self.playerScore < dealerScore:
-                    await self.channel.send(f"{self.player.mention} berda_bot wins! You lose, hombre")
-                elif self.playerScore == self.dealerScore:
-                    await self.channel.send(f"{self.player.mention} ties with the berda bot! Game over.")
-                else:
-                    await self.channel.send(f"{self.player.mention} beats berda bot! You win!.")
-                gameover = True
+                
+                if not dealerBust:
+                    if self.playerScore < self.dealerScore:
+                        await self.channel.send(f"{self.player.mention} berda_bot wins! You lose, hombre")
+                    elif self.playerScore == self.dealerScore:
+                        await self.channel.send(f"{self.player.mention} ties with the berda bot! Game over.")
+                    else:
+                        await self.channel.send(f"{self.player.mention} beats berda bot! You win!.")
+                    gameover = True
 
             else:
                 await self.channel.send(f"Invalid input: Try again, hit or stay?")
 
-    #TODO: Add logic for using an Ace as a 1 or a 10
     def generateHand(self):
         card1 = random.randint(1,10)
         self.playerScore += card1
         if card1 == 1:
             card1 = 'Ace'
+            self.playerScore += 10 #start with 11
         if card1 == 10:
             card1 = self.royals[random.randint(0,2)]
+        self.playerHand.append(card1)
 
         card2 = random.randint(1,10)
         self.playerScore += card2
         if card2 == 1:
             card2 = 'Ace'
+            if card1 != 'Ace':
+                self.playerScore += 10 #11 for an ace
         if card2 == 10:
             card2 = self.royals[random.randint(0,2)]
 
         hand = [card1,card2]
         return hand
 
-    def hit(self):
+    def hit(self, caller):
+        hand = None
         card = random.randint(1,10)
-        self.playerScore += card
+        if caller == 'Player':
+            hand = self.playerHand
+            self.playerScore += card
+            if self.playerScore > 21:
+                #check for Aces to change so as to not Bust
+                for i in hand:
+                    if i == 'Ace':
+                        self.playerScore -= 10 #make the found Ace into a 1
+                        break
+
+        if caller == 'Dealer':
+            hand = self.dealerHand
+            self.dealerScore += card
+            if self.dealerScore > 21:
+                #check for Aces to change so as to not Bust
+                for i in hand:
+                    if i == 'Ace':
+                        self.dealerScore -= 10 #make the found Ace into a 1
+                        break
+
         if card == 1:
             return 'Ace'
         if card == 10:
             return self.royals[random.randint(0,2)]
         return card
-
-
