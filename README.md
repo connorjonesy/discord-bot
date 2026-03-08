@@ -116,8 +116,5 @@ git push origin feature/your-feature-name
 
 ## License
 Do whatever you want with this 🤷‍♂️
-
----
-
 <div align="center">
 </div>
